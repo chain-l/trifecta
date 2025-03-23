@@ -1,0 +1,38 @@
+{
+  "name": "ai_agent_trifecta",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "next lint"
+  },
+  "dependencies": {
+    "@privy-io/react-auth": "^1.95.3",
+    "@privy-io/server-auth": "^1.16.8",
+    "@privy-io/wagmi": "^0.2.12",
+    "@tanstack/react-query": "^5.62.2",
+    "framer-motion": "^11.13.1",
+    "lucide-react": "^0.468.0",
+    "next": "15.2.3",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0",
+    "react-hot-toast": "^2.5.2",
+    "react-icons": "^5.4.0",
+    "react-toastify": "^11.0.5",
+    "viem": "^2.21.54",
+    "wagmi": "^2.13.3"
+  },
+  "devDependencies": {
+    "@eslint/eslintrc": "^3",
+    "@tailwindcss/postcss": "^4",
+    "@types/node": "^20",
+    "@types/react": "^19",
+    "@types/react-dom": "^19",
+    "eslint": "^9",
+    "eslint-config-next": "15.2.3",
+    "tailwindcss": "^4",
+    "typescript": "^5"
+  }
+}
