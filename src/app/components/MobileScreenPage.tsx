@@ -6,18 +6,14 @@ import { Laptop, Smartphone, ArrowRight } from "lucide-react";
 
 function MobileResponsiveMessage() {
   return (
-    <div className="lg:hidden fixed inset-0 bg-gradient-to-b from-black to-gray-900 flex items-center justify-center p-10">
+    <div className="lg:hidden flex items-center justify-center p-10">
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.6 }}
         className="w-full max-w-md"
       >
-        <div className="relative">
-          {/* Decorative elements */}
-          <div className="absolute inset-0 bg-blue-500/10 blur-3xl rounded-full transform -translate-y-1/2"></div>
-          <div className="absolute inset-0 bg-cyan-500/10 blur-3xl rounded-full transform translate-y-1/2"></div>
-          
+        <div className="relative">          
           {/* Main content card */}
           <div className="relative bg-gray-900/60 backdrop-blur-xl rounded-2xl p-8 border border-gray-800/50 shadow-2xl">
             {/* Icon animation container */}
