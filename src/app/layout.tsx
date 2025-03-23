@@ -18,8 +18,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "AI Agent Trifecta",
-  description: "AI Agent - Trifecta",
+  title: "OGxBT Trifecta",
+  description: "OGxBT - Trifecta",
 };
 
 export default function RootLayout({

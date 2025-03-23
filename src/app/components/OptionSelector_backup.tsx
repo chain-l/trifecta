@@ -14,63 +14,6 @@ import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import { simulateApiCall } from "../utils/apiSimulator";
 
-const dummyTableData = [
-  {
-    id: 1,
-    image: "https://picsum.photos/50/50?random=1",
-    Twitter_Account: "cryptostasher",
-    Tweet: "https://x.com/cryptostasher/status/1898008977801125996",
-    Tweet_Date: "2025-03-07T13:52:58.000Z",
-    Signal_Generation_Date: "2025-03-19T10:41:18.954Z",
-    Signal_Message: "Buy",
-    Token_Mentioned: "ZIG",
-    Token_ID: "zignaly",
-    Price_at_Tweet: 0.08839765311728418,
-    Current_Price: 0.08332613939091653,
-    TP1: 0.1,
-    TP2: 0.15,
-    SL: 0.0708,
-    Exit_Price: 0.08437719090322876,
-    P_and_L: "-4.55%",
-  },
-  {
-    id: 2,
-    image: "https://picsum.photos/50/50?random=2",
-    Twitter_Account: "Cryptobullmaker",
-    Tweet: "https://x.com/Cryptobullmaker/status/1898588132398027046",
-    Tweet_Date: "2025-03-09T04:14:19.000Z",
-    Signal_Generation_Date: "2025-03-19T10:42:38.487Z",
-    Signal_Message: "Buy",
-    Token_Mentioned: "AST",
-    Token_ID: "astra-2",
-    Price_at_Tweet: 0.238839765311728418,
-    Current_Price: 0.00042143784946687166,
-    TP1: 0.0005,
-    TP2: 0.00055,
-    SL: 0.0004,
-    Exit_Price: 0.0005375392354823141,
-    P_and_L: "21.44%",
-  },
-  {
-    id: 3,
-    image: "https://picsum.photos/50/50?random=3",
-    Twitter_Account: "CryptoGemRnld",
-    Tweet: "https://x.com/CryptoGemRnld/status/1898004492236603820",
-    Tweet_Date: "2025-03-07T13:35:08.000Z",
-    Signal_Generation_Date: "2025-03-19T10:45:27.110Z",
-    Signal_Message: "Buy",
-    Token_Mentioned: "LNQ",
-    Token_ID: "linqai",
-    Price_at_Tweet: 0.12439765311728418,
-    Current_Price: 0.03137818737413583,
-    TP1: 0.04,
-    TP2: 0.045,
-    SL: 0.028,
-    Exit_Price: "N/A",
-    P_and_L: "N/A",
-  },
-];
-
 const OptionsSelector = () => {
   const [activeOption, setActiveOption] = useState<"option1" | "option2">(
     "option1"

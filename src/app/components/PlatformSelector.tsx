@@ -1,10 +1,12 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { toast } from "react-toastify";
+import { toast, ToastContainer } from "react-toastify";
 import { simulateApiCall } from "../utils/apiSimulator";
-import { Eye, EyeOff, Play, Loader2 } from "lucide-react";
+import { Eye, EyeOff, Play, Loader2, InfoIcon } from "lucide-react";
 import PlatformResultsTable from "./PlatformResultsTable";
+import DatePicker from "react-datepicker";
+import "react-datepicker/dist/react-datepicker.css";
 
 const generateCSV = (data: any[]): any => {
   const headers = [
@@ -51,6 +53,10 @@ const downloadCSV = (csvContent: string, fileName: string) => {
   document.body.appendChild(link);
   link.click();
   document.body.removeChild(link);
+  toast.success("Download successful", {
+    position: "top-center",
+    autoClose: 2000,
+  });
 };
 
 const platforms = [
@@ -75,16 +81,27 @@ const PlatformSelector = ({ onSimulateSuccess }: PlatformSelectorProps) => {
   const [showResults, setShowResults] = useState(false);
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const triggerRef = useRef(null);
-  const [summary, setSummary] = useState(""); // Full summary from API
-  const [displayedSummary, setDisplayedSummary] = useState(""); // Gradually displayed text
-  const [isTyping, setIsTyping] = useState(false); // Typing effect status
-  const [isLoadingSummary, setIsLoadingSummary] = useState(false); // Loading state
+  const [summary, setSummary] = useState("");
+  const [displayedSummary, setDisplayedSummary] = useState("");
+  const [isTyping, setIsTyping] = useState(false);
+  const [isLoadingSummary, setIsLoadingSummary] = useState(false);
   const [isSimulating, setIsSimulating] = useState(false);
+  const [selectedDate, setSelectedDate] = useState<Date | null>(new Date());
 
   const handleApiSimulate = async () => {
-    if (!apiKey || !selectedPlatform) return;
+    if (!apiKey || !selectedPlatform) {
+      toast.warn("Please enter an API key and select a platform.", {
+        position: "top-center",
+        autoClose: 3000,
+      });
+      return;
+    }
 
-    setIsSimulating(true); // Start the loader
+    setIsSimulating(true);
+    toast.info("Starting simulation process...", {
+      position: "top-center",
+      autoClose: 3000,
+    });
 
     try {
       const result = await simulateApiCall(apiKey, selectedPlatform);
@@ -92,23 +109,24 @@ const PlatformSelector = ({ onSimulateSuccess }: PlatformSelectorProps) => {
         setResults(result.data);
         setShowResults(true);
         onSimulateSuccess?.(result.data);
-        toast.success("Simulation data fetched successfully!", {
-          position: "top-center",
-          autoClose: 3000,
-        });
+        // toast.success("Simulation completed successfully", {
+        //   position: "top-center",
+        //   autoClose: 3000,
+        // });
+      } else {
+        throw new Error("No data returned from simulation.");
       }
     } catch (error) {
       console.error("Simulation failed:", error);
-      toast.error("Simulation failed. Please try again.", {
+      toast.error(`Simulation failed: ${error.message}. Please try again.`, {
         position: "top-center",
         autoClose: 3000,
       });
     } finally {
-      setIsSimulating(false); // Stop the loader
+      setIsSimulating(false);
     }
   };
 
-  // Calculate average P&L
   const calculateAveragePnl = (results) => {
     const validPnls = results
       .map((item) => item.p_and_l)
@@ -131,29 +149,13 @@ const PlatformSelector = ({ onSimulateSuccess }: PlatformSelectorProps) => {
       if (!response.ok) throw new Error("Failed to fetch summary");
 
       const result = await response.json();
-      console.log("Summary result:", result);
-
       const summaryString = result.summary;
-      let parsedJson;
-      // Extract the JSON part from the string using a regular expression
       const jsonMatch = summaryString.match(/```json\s*([\s\S]*?)\s*```/);
-      console.log("jsonMatch", jsonMatch);
       if (jsonMatch && jsonMatch[1]) {
-        const jsonString = jsonMatch[1].trim(); // Extract and clean the JSON string
-        try {
-          parsedJson = JSON.parse(jsonString);
-          if (parsedJson.insights) {
-            console.log(parsedJson.insights);
-            return parsedJson.insights;
-          }
-        } catch (parseError) {
-          console.error("Failed to parse JSON from summary:", parseError);
-        }
-      } else {
-        console.error("No valid JSON object found in summaryString");
+        const jsonString = jsonMatch[1].trim();
+        const parsedJson = JSON.parse(jsonString);
+        if (parsedJson.insights) return parsedJson.insights;
       }
-
-      // Fallback: return the original string if parsing fails
       return summaryString;
     } catch (error) {
       console.error("Error fetching summary:", error);
@@ -161,9 +163,13 @@ const PlatformSelector = ({ onSimulateSuccess }: PlatformSelectorProps) => {
     }
   };
 
-  // Handle "Summarize" button click
   const handleSummarize = async () => {
     setIsLoadingSummary(true);
+    toast.info("Generating summary...", {
+      position: "top-center",
+      autoClose: 3000,
+    });
+
     const averagePnl = calculateAveragePnl(results);
     const dataToSend = {
       averagePnl,
@@ -173,11 +179,14 @@ const PlatformSelector = ({ onSimulateSuccess }: PlatformSelectorProps) => {
       })),
     };
     const fetchedSummary = await fetchSummary(dataToSend);
-    // const fetchedSummary = " This is a sample summary. lorem ipsum lorem";
     setSummary(" " + fetchedSummary);
-    setDisplayedSummary(""); // Reset displayed text
-    setIsTyping(true); // Start typing effect
+    setDisplayedSummary("");
+    setIsTyping(true);
     setIsLoadingSummary(false);
+    toast.success("Summary generated successfully!", {
+      position: "top-center",
+      autoClose: 3000,
+    });
   };
 
   useEffect(() => {
@@ -199,6 +208,17 @@ const PlatformSelector = ({ onSimulateSuccess }: PlatformSelectorProps) => {
   return (
     <div className="space-y-6">
       <div className="relative">
+        <DatePicker
+          selected={selectedDate}
+          onChange={(date: Date) => setSelectedDate(date)}
+          className="w-full p-3 bg-gray-900 text-gray-200 border border-gray-700 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+          placeholderText="Select a date"
+          dateFormat="MMMM d, yyyy"
+          showPopperArrow={false}
+        />
+      </div>
+
+      <div className="relative">
         <input
           type={showApiKey ? "text" : "password"}
           value={apiKey}
@@ -210,11 +230,7 @@ const PlatformSelector = ({ onSimulateSuccess }: PlatformSelectorProps) => {
           onClick={() => setShowApiKey(!showApiKey)}
           className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-200"
         >
-          {showApiKey ? (
-            <EyeOff className="w-5 h-5" />
-          ) : (
-            <Eye className="w-5 h-5" />
-          )}
+          {showApiKey ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
         </button>
       </div>
 
@@ -255,8 +271,8 @@ const PlatformSelector = ({ onSimulateSuccess }: PlatformSelectorProps) => {
             style={{
               position: "absolute",
               top: triggerRef.current.getBoundingClientRect().height,
-              left: 0, // Align with the left edge of the trigger
-              width: triggerRef.current.getBoundingClientRect().width, // Match trigger width
+              left: 0,
+              width: triggerRef.current.getBoundingClientRect().width,
               maxHeight: "200px",
               overflowY: "scroll",
               zIndex: 1000,
@@ -301,7 +317,7 @@ const PlatformSelector = ({ onSimulateSuccess }: PlatformSelectorProps) => {
           isSimulating
             ? "bg-blue-600 text-white cursor-not-allowed"
             : apiKey && selectedPlatform
-            ? "bg-blue-600 hover:bg-blue-700 text-white"
+            ? "bg-blue-600 hover:bg-blue-700 text-white cursor-pointer"
             : "bg-gray-800 text-gray-400 cursor-not-allowed"
         }`}
       >
@@ -315,20 +331,20 @@ const PlatformSelector = ({ onSimulateSuccess }: PlatformSelectorProps) => {
 
       {showResults && (
         <div>
-          <div className="text-gray-400 text-sm mb-4 items-center gap-2">
-            <span>
-              You can download your backtested data in CSV. And Summarize it
-              using 0G Computation as well.
-            </span>
-          </div>
+          <div className="flex items-start gap-2 p-3 bg-blue-500/20 border border-blue-500/50 rounded-lg text-blue-200 text-sm">
+          <InfoIcon className="w-5 h-5 mt-0.5 flex-shrink-0" />
+          <span>
+          You can download your backtested data in CSV. And Summarize it using 0G Computation as well.
+          </span>
+        </div>
 
           <button
             onClick={handleSummarize}
             disabled={isLoadingSummary}
             className={`mt-4 py-2 px-4 rounded ${
               isLoadingSummary
-                ? "bg-gray-600 text-gray-400"
-                : "bg-green-600 hover:bg-green-700 text-white"
+                ? "bg-gray-600 text-gray-400 cursor-not-allowed"
+                : "bg-green-600 hover:bg-green-700 text-white cursor-pointer"
             }`}
           >
             {isLoadingSummary ? "Summarizing..." : "Summarize Result"}
@@ -338,7 +354,7 @@ const PlatformSelector = ({ onSimulateSuccess }: PlatformSelectorProps) => {
               const csvContent = generateCSV(results);
               downloadCSV(csvContent, "backtestingResult.csv");
             }}
-            className="mt-4 ml-4 bg-blue-600 hover:bg-blue-700 text-white py-2 px-4 rounded"
+            className="mt-4 ml-4 bg-blue-600 hover:bg-blue-700 text-white py-2 px-4 rounded cursor-pointer"
           >
             Download CSV
           </button>
@@ -353,6 +369,7 @@ const PlatformSelector = ({ onSimulateSuccess }: PlatformSelectorProps) => {
           <PlatformResultsTable data={results} />
         </div>
       )}
+      <ToastContainer />
     </div>
   );
 };

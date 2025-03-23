@@ -28,7 +28,7 @@ export function Navbar() {
           >
             <Waves className="w-8 h-8" />
             <span className="text-xl font-bold bg-gradient-to-r from-primary to-cyan bg-clip-text text-white">
-              AI Agent
+            OGxBT
             </span>
           </Link>
           
