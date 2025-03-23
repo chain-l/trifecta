@@ -1,10 +1,57 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { toast } from "react-toastify";
 import { simulateApiCall } from "../utils/apiSimulator";
-import { Eye, EyeOff, Play } from "lucide-react";
+import { Eye, EyeOff, Play, Loader2 } from "lucide-react";
 import PlatformResultsTable from "./PlatformResultsTable";
+
+const generateCSV = (data: any[]): any => {
+  const headers = [
+    "Signal Generation Date",
+    "Signal Message",
+    "Token Mentioned",
+    "Token ID",
+    "Current Price",
+    "TP1",
+    "TP2",
+    "SL",
+    "Exit Price",
+    "P&L",
+  ];
+
+  const rows = data.map((item) => {
+    const signalData = item.signal_data;
+    return [
+      signalData.tweet_timestamp,
+      signalData.signal,
+      signalData.tokenMentioned,
+      signalData.tokenId,
+      signalData.currentPrice,
+      signalData.targets[0],
+      signalData.targets[1],
+      signalData.stopLoss,
+      item.exit_price || "",
+      item.p_and_l || "",
+    ]
+      .map((field) => `"${field || ""}"`)
+      .join(",");
+  });
+
+  return [headers.join(","), ...rows].join("\n");
+};
+
+const downloadCSV = (csvContent: string, fileName: string) => {
+  const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+  const link = document.createElement("a");
+  const url = URL.createObjectURL(blob);
+  link.setAttribute("href", url);
+  link.setAttribute("download", fileName);
+  link.style.visibility = "hidden";
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+};
 
 const platforms = [
   { name: "CTxbt", image: "/assets/ctxbt.svg" },
@@ -28,37 +75,126 @@ const PlatformSelector = ({ onSimulateSuccess }: PlatformSelectorProps) => {
   const [showResults, setShowResults] = useState(false);
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const triggerRef = useRef(null);
-
-  const handlePlatformChange = (platformName: string) => {
-    if (platformName === "CTxbt") {
-      setSelectedPlatform(platformName);
-    } else {
-      toast.info(`${platformName} - Coming Soon!`, {
-        position: "top-center",
-        autoClose: 3000,
-        hideProgressBar: false,
-        closeOnClick: true,
-        pauseOnHover: true,
-        draggable: true,
-        theme: "light",
-      });
-    }
-  };
+  const [summary, setSummary] = useState(""); // Full summary from API
+  const [displayedSummary, setDisplayedSummary] = useState(""); // Gradually displayed text
+  const [isTyping, setIsTyping] = useState(false); // Typing effect status
+  const [isLoadingSummary, setIsLoadingSummary] = useState(false); // Loading state
+  const [isSimulating, setIsSimulating] = useState(false);
 
   const handleApiSimulate = async () => {
     if (!apiKey || !selectedPlatform) return;
 
-    const result = await simulateApiCall(apiKey, selectedPlatform);
-    if (result.success && result.data) {
-      setResults(result.data);
-      setShowResults(true);
-      onSimulateSuccess?.(result.data);
-      toast.success("Simulation data fetched successfully!", {
+    setIsSimulating(true); // Start the loader
+
+    try {
+      const result = await simulateApiCall(apiKey, selectedPlatform);
+      if (result.success && result.data) {
+        setResults(result.data);
+        setShowResults(true);
+        onSimulateSuccess?.(result.data);
+        toast.success("Simulation data fetched successfully!", {
+          position: "top-center",
+          autoClose: 3000,
+        });
+      }
+    } catch (error) {
+      console.error("Simulation failed:", error);
+      toast.error("Simulation failed. Please try again.", {
         position: "top-center",
         autoClose: 3000,
       });
+    } finally {
+      setIsSimulating(false); // Stop the loader
     }
   };
+
+  // Calculate average P&L
+  const calculateAveragePnl = (results) => {
+    const validPnls = results
+      .map((item) => item.p_and_l)
+      .filter((pnl) => pnl !== "N/A")
+      .map((pnl) => parseFloat(pnl.replace("%", "")));
+
+    if (validPnls.length === 0) return 0;
+
+    const sum = validPnls.reduce((acc, val) => acc + val, 0);
+    return sum / validPnls.length;
+  };
+
+  const fetchSummary = async (data) => {
+    try {
+      const response = await fetch("http://localhost:3001/api/summarize", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(data),
+      });
+      if (!response.ok) throw new Error("Failed to fetch summary");
+
+      const result = await response.json();
+      console.log("Summary result:", result);
+
+      const summaryString = result.summary;
+      let parsedJson;
+      // Extract the JSON part from the string using a regular expression
+      const jsonMatch = summaryString.match(/```json\s*([\s\S]*?)\s*```/);
+      console.log("jsonMatch", jsonMatch);
+      if (jsonMatch && jsonMatch[1]) {
+        const jsonString = jsonMatch[1].trim(); // Extract and clean the JSON string
+        try {
+          parsedJson = JSON.parse(jsonString);
+          if (parsedJson.insights) {
+            console.log(parsedJson.insights);
+            return parsedJson.insights;
+          }
+        } catch (parseError) {
+          console.error("Failed to parse JSON from summary:", parseError);
+        }
+      } else {
+        console.error("No valid JSON object found in summaryString");
+      }
+
+      // Fallback: return the original string if parsing fails
+      return summaryString;
+    } catch (error) {
+      console.error("Error fetching summary:", error);
+      return "Failed to generate summary.";
+    }
+  };
+
+  // Handle "Summarize" button click
+  const handleSummarize = async () => {
+    setIsLoadingSummary(true);
+    const averagePnl = calculateAveragePnl(results);
+    const dataToSend = {
+      averagePnl,
+      signals: results.map((item) => ({
+        token: item.signal_data.tokenMentioned,
+        pnl: item.p_and_l,
+      })),
+    };
+    const fetchedSummary = await fetchSummary(dataToSend);
+    // const fetchedSummary = " This is a sample summary. lorem ipsum lorem";
+    setSummary(" " + fetchedSummary);
+    setDisplayedSummary(""); // Reset displayed text
+    setIsTyping(true); // Start typing effect
+    setIsLoadingSummary(false);
+  };
+
+  useEffect(() => {
+    if (isTyping && summary) {
+      let index = 0;
+      const timer = setInterval(() => {
+        if (index < summary.length) {
+          setDisplayedSummary((prev) => prev + summary[index]);
+          index++;
+        } else {
+          clearInterval(timer);
+          setIsTyping(false);
+        }
+      }, 25);
+      return () => clearInterval(timer);
+    }
+  }, [isTyping, summary]);
 
   return (
     <div className="space-y-6">
@@ -160,18 +296,63 @@ const PlatformSelector = ({ onSimulateSuccess }: PlatformSelectorProps) => {
 
       <button
         onClick={handleApiSimulate}
-        disabled={!apiKey || !selectedPlatform}
+        disabled={isSimulating || !apiKey || !selectedPlatform}
         className={`flex items-center justify-center space-x-2 w-full py-2.5 px-4 rounded-lg transition-colors ${
-          apiKey && selectedPlatform
+          isSimulating
+            ? "bg-blue-600 text-white cursor-not-allowed"
+            : apiKey && selectedPlatform
             ? "bg-blue-600 hover:bg-blue-700 text-white"
             : "bg-gray-800 text-gray-400 cursor-not-allowed"
         }`}
       >
-        <Play className="w-4 h-4" />
-        <span>Simulate</span>
+        {isSimulating ? (
+          <Loader2 className="w-4 h-4 animate-spin" />
+        ) : (
+          <Play className="w-4 h-4" />
+        )}
+        <span>{isSimulating ? "Simulating..." : "Simulate"}</span>
       </button>
 
-      {showResults && <PlatformResultsTable data={results} />}
+      {showResults && (
+        <div>
+          <div className="text-gray-400 text-sm mb-4 items-center gap-2">
+            <span>
+              You can download your backtested data in CSV. And Summarize it
+              using 0G Computation as well.
+            </span>
+          </div>
+
+          <button
+            onClick={handleSummarize}
+            disabled={isLoadingSummary}
+            className={`mt-4 py-2 px-4 rounded ${
+              isLoadingSummary
+                ? "bg-gray-600 text-gray-400"
+                : "bg-green-600 hover:bg-green-700 text-white"
+            }`}
+          >
+            {isLoadingSummary ? "Summarizing..." : "Summarize Result"}
+          </button>
+          <button
+            onClick={() => {
+              const csvContent = generateCSV(results);
+              downloadCSV(csvContent, "backtestingResult.csv");
+            }}
+            className="mt-4 ml-4 bg-blue-600 hover:bg-blue-700 text-white py-2 px-4 rounded"
+          >
+            Download CSV
+          </button>
+          {summary && (
+            <div className="mt-4 p-4 bg-gray-800 rounded-lg">
+              <p className="text-gray-300 font-mono">
+                {displayedSummary}
+                {isTyping && <span className="animate-blink">|</span>}
+              </p>
+            </div>
+          )}
+          <PlatformResultsTable data={results} />
+        </div>
+      )}
     </div>
   );
 };

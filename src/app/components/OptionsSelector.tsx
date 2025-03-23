@@ -15,6 +15,18 @@ import "react-toastify/dist/ReactToastify.css";
 import { simulateApiCall } from "../utils/apiSimulator";
 import "react-toastify/dist/ReactToastify.css";
 import PlatformSelector from "./PlatformSelector";
+import coins from '../../../coins.json';
+
+function getCoinIdFromJson(tokenSymbol: string): string | null {
+  // Convert the token symbol to lowercase
+  const tokenSymbolLower = tokenSymbol.toLowerCase();
+
+  // Search for the token symbol in the coins.json data
+  const coin = coins.find((coin) => coin.symbol.toLowerCase() === tokenSymbolLower);
+
+  // Return the coin ID if found, otherwise return null
+  return coin ? coin.id : null;
+}
 
 const dummyTableData = [
   {
@@ -84,8 +96,99 @@ const OptionsSelector = () => {
   const [showApiKey, setShowApiKey] = useState(false); // State for toggling API key visibility
   const [tableData, setTableData] = useState<any[]>([]);
 
-  const handleSimulate = () => {
-    setShowTable(true);
+  const handleTelegramSimulate = async () => {
+    try {
+      const response = await fetch('http://localhost:3001/infer', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ message: telegramMessage }),
+      });
+
+      if (!response.ok) {
+        throw new Error(`Network response was not ok: ${response.statusText}`);
+      }
+
+      const responseText = await response.text();
+      console.log('Raw inference response:', responseText);
+
+      let data: { result: string; };
+      try {
+        data = JSON.parse(responseText);
+      } catch (parseError) {
+        throw new Error('Failed to parse response as JSON');
+      }
+
+      console.log('Inference result:', data.result);
+
+      let parsedResult: { tokenSymbol: any; signal: any; tp1: any; tp2: any; sl: any; };
+      try {
+        parsedResult = JSON.parse(data.result);
+      } catch (parseError) {
+        throw new Error('Failed to parse result as JSON');
+      }
+
+      if (parsedResult && parsedResult.tokenSymbol && parsedResult.signal && parsedResult.tp1 && parsedResult.tp2 && parsedResult.sl) {
+        // Convert tokenSymbol to lowercase and fetch coin ID from coins.json
+        const tokenSymbolLower = parsedResult.tokenSymbol.toLowerCase();
+        const coinId = getCoinIdFromJson(tokenSymbolLower);
+        console.log("Coin ID: ", coinId);
+
+        // Prepare data for process-signal API
+        const processData = {
+          signal_data: {
+            tokenSymbol: parsedResult.tokenSymbol,
+            signal: parsedResult.signal,
+            tp1: parsedResult.tp1,
+            tp2: parsedResult.tp2,
+            sl: parsedResult.sl,
+            tokenId: coinId,
+          }
+        };
+
+        console.log("Processed data", processData);
+
+        // Send data to process-signal API
+        const processResponse = await fetch('/api/process-telegram-signals', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(processData),
+        });
+
+        if (!processResponse.ok) {
+          throw new Error('Failed to process signals');
+        }
+
+        const processedData = await processResponse.json();
+        console.log(processedData.data);
+        setTableData([processedData.data]);
+        setShowTable(true);
+      } else {
+        toast.error('Invalid response format. Please try again.', {
+          position: "top-center",
+          autoClose: 3000,
+          hideProgressBar: false,
+          closeOnClick: true,
+          pauseOnHover: true,
+          draggable: true,
+          theme: "light",
+        });
+      }
+    } catch (error) {
+      console.error('Error during inference:', error);
+      toast.error('Failed to perform inference. Please try again.', {
+        position: "top-center",
+        autoClose: 3000,
+        hideProgressBar: false,
+        closeOnClick: true,
+        pauseOnHover: true,
+        draggable: true,
+        theme: "light",
+      });
+    }
   };
 
   const handlePlatformSimulateSuccess = (data: any) => {
@@ -110,7 +213,7 @@ const OptionsSelector = () => {
             />
           </div>
           <button
-            onClick={handleSimulate}
+            onClick={handleTelegramSimulate}
             disabled={!telegramMessage}
             className={`flex items-center justify-center space-x-2 w-full py-2.5 px-4 rounded-lg transition-colors ${
               telegramMessage
@@ -194,18 +297,6 @@ const OptionsSelector = () => {
                 <thead>
                   <tr className="border-b border-gray-800">
                     <th className="py-3 px-4 text-gray-400 font-medium whitespace-nowrap">
-                      Twitter Account
-                    </th>
-                    <th className="py-3 px-4 text-gray-400 font-medium whitespace-nowrap">
-                      Tweet
-                    </th>
-                    <th className="py-3 px-4 text-gray-400 font-medium whitespace-nowrap">
-                      Tweet Date
-                    </th>
-                    <th className="py-3 px-4 text-gray-400 font-medium whitespace-nowrap">
-                      Signal Generation Date
-                    </th>
-                    <th className="py-3 px-4 text-gray-400 font-medium whitespace-nowrap">
                       Signal Message
                     </th>
                     <th className="py-3 px-4 text-gray-400 font-medium whitespace-nowrap">
@@ -213,9 +304,6 @@ const OptionsSelector = () => {
                     </th>
                     <th className="py-3 px-4 text-gray-400 font-medium whitespace-nowrap">
                       Token ID
-                    </th>
-                    <th className="py-3 px-4 text-gray-400 font-medium whitespace-nowrap">
-                      Price at Tweet
                     </th>
                     <th className="py-3 px-4 text-gray-400 font-medium whitespace-nowrap">
                       Current Price
@@ -238,57 +326,35 @@ const OptionsSelector = () => {
                   </tr>
                 </thead>
                 <tbody>
-                  {tableData.map((row) => (
-                    <tr key={row.id} className="border-b border-gray-800">
+                  {tableData.map((row, index) => (
+                    <tr key={index} className="border-b border-gray-800">
                       <td className="py-3 px-4 text-gray-300">
-                        {row.signal_data.twitterHandle}
+                        {row.signal}
                       </td>
                       <td className="py-3 px-4 text-gray-300">
-                        <a
-                          href={row.signal_data.tweet_link}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="text-blue-400 hover:underline"
-                        >
-                          Link
-                        </a>
+                        {row.tokenSymbol}
                       </td>
                       <td className="py-3 px-4 text-gray-300">
-                        {new Date(
-                          row.signal_data.tweet_timestamp
-                        ).toLocaleDateString()}
+                        {row.tokenId}
                       </td>
                       <td className="py-3 px-4 text-gray-300">
-                        {new Date(
-                          row.signal_data.tweet_timestamp
-                        ).toLocaleDateString()}
+                        {row.currentPrice}
                       </td>
                       <td className="py-3 px-4 text-gray-300">
-                        {row.signal_data.signal}
+                        {row.tp1}
                       </td>
                       <td className="py-3 px-4 text-gray-300">
-                        {row.signal_data.tokenMentioned}
+                        {row.tp2}
                       </td>
                       <td className="py-3 px-4 text-gray-300">
-                        {row.signal_data.tokenId}
+                        {row.sl}
                       </td>
                       <td className="py-3 px-4 text-gray-300">
-                        {row.signal_data.priceAtTweet}
+                        {row.exit_price}
                       </td>
                       <td className="py-3 px-4 text-gray-300">
-                        {row.signal_data.currentPrice}
+                        {row.p_and_l}
                       </td>
-                      <td className="py-3 px-4 text-gray-300">
-                        {row.signal_data.targets[0]}
-                      </td>
-                      <td className="py-3 px-4 text-gray-300">
-                        {row.signal_data.targets[1]}
-                      </td>
-                      <td className="py-3 px-4 text-gray-300">
-                        {row.signal_data.stopLoss}
-                      </td>
-                      <td className="py-3 px-4 text-gray-300">N/A</td>
-                      <td className="py-3 px-4 text-gray-300">N/A</td>
                     </tr>
                   ))}
                 </tbody>
@@ -302,5 +368,6 @@ const OptionsSelector = () => {
     </div>
   );
 };
+
 
 export default OptionsSelector;

@@ -18,15 +18,6 @@ const PlatformResultsTable = ({ data }: PlatformResultsTableProps) => {
         <thead>
           <tr className="border-b border-gray-800">
             <th className="py-3 px-4 text-gray-400 font-medium whitespace-nowrap">
-              Twitter Account
-            </th>
-            <th className="py-3 px-4 text-gray-400 font-medium whitespace-nowrap">
-              Tweet
-            </th>
-            <th className="py-3 px-4 text-gray-400 font-medium whitespace-nowrap">
-              Tweet Date
-            </th>
-            <th className="py-3 px-4 text-gray-400 font-medium whitespace-nowrap">
               Signal Generation Date
             </th>
             <th className="py-3 px-4 text-gray-400 font-medium whitespace-nowrap">
@@ -37,9 +28,6 @@ const PlatformResultsTable = ({ data }: PlatformResultsTableProps) => {
             </th>
             <th className="py-3 px-4 text-gray-400 font-medium whitespace-nowrap">
               Token ID
-            </th>
-            <th className="py-3 px-4 text-gray-400 font-medium whitespace-nowrap">
-              Price at Tweet
             </th>
             <th className="py-3 px-4 text-gray-400 font-medium whitespace-nowrap">
               Current Price
@@ -65,22 +53,6 @@ const PlatformResultsTable = ({ data }: PlatformResultsTableProps) => {
           {data.map((row) => (
             <tr key={row.id} className="border-b border-gray-800">
               <td className="py-3 px-4 text-gray-300">
-                {row.signal_data.twitterHandle}
-              </td>
-              <td className="py-3 px-4 text-gray-300">
-                <a
-                  href={row.signal_data.tweet_link}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-blue-400 hover:underline"
-                >
-                  Link
-                </a>
-              </td>
-              <td className="py-3 px-4 text-gray-300">
-                {new Date(row.signal_data.tweet_timestamp).toLocaleDateString()}
-              </td>
-              <td className="py-3 px-4 text-gray-300">
                 {new Date(row.signal_data.tweet_timestamp).toLocaleDateString()}
               </td>
               <td className="py-3 px-4 text-gray-300">
@@ -91,9 +63,6 @@ const PlatformResultsTable = ({ data }: PlatformResultsTableProps) => {
               </td>
               <td className="py-3 px-4 text-gray-300">
                 {row.signal_data.tokenId}
-              </td>
-              <td className="py-3 px-4 text-gray-300">
-                {row.signal_data.priceAtTweet}
               </td>
               <td className="py-3 px-4 text-gray-300">
                 {row.signal_data.currentPrice}
@@ -107,12 +76,8 @@ const PlatformResultsTable = ({ data }: PlatformResultsTableProps) => {
               <td className="py-3 px-4 text-gray-300">
                 {row.signal_data.stopLoss}
               </td>
-              <td className="py-3 px-4 text-gray-300">
-                {row.exit_price || "N/A"}
-              </td>
-              <td className="py-3 px-4 text-gray-300">
-                {row.p_and_l || "N/A"}
-              </td>
+              <td className="py-3 px-4 text-gray-300">{row.exit_price}</td>
+              <td className="py-3 px-4 text-gray-300">{row.p_and_l}</td>
             </tr>
           ))}
         </tbody>

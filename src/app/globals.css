@@ -25,14 +25,15 @@ body {
   font-family: Arial, Helvetica, sans-serif;
 }
 
-html, body {
+html,
+body {
   min-height: 100%;
   overflow-y: auto;
 }
 
 /* For Webkit browsers (Chrome, Safari, newer versions of Opera) */
 ::-webkit-scrollbar {
-  width: 8px;  /* width of vertical scrollbar */
+  width: 8px; /* width of vertical scrollbar */
   height: 8px; /* height of horizontal scrollbar */
 }
 
@@ -54,4 +55,19 @@ html, body {
 * {
   scrollbar-width: thin;
   scrollbar-color: rgb(90, 192, 251) #1a1a1a; /* thumb and track color */
+}
+
+@keyframes blink {
+  0% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0;
+  }
+  100% {
+    opacity: 1;
+  }
+}
+.animate-blink {
+  animation: blink 1s infinite;
 }
