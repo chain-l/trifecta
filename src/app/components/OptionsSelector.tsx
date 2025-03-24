@@ -41,7 +41,7 @@ const OptionsSelector = () => {
     });
 
     try {
-      const response = await fetch('http://localhost:3001/infer', {
+      const response = await fetch('https://ogxbt.xmutant.xyz/infer', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -179,11 +179,10 @@ const OptionsSelector = () => {
           <button
             onClick={handleTelegramSimulate}
             disabled={!telegramMessage || isLoading} // Disable when loading
-            className={`flex items-center justify-center space-x-2 w-full py-2.5 px-4 rounded-lg transition-colors ${
-              telegramMessage && !isLoading
-                ? "bg-blue-600 hover:bg-blue-700 text-white cursor-pointer"
-                : "bg-gray-800 text-gray-400 cursor-not-allowed"
-            }`}
+            className={`flex items-center justify-center space-x-2 w-full py-2.5 px-4 rounded-lg transition-colors ${telegramMessage && !isLoading
+              ? "bg-blue-600 hover:bg-blue-700 text-white cursor-pointer"
+              : "bg-gray-800 text-gray-400 cursor-not-allowed"
+              }`}
           >
             {isLoading ? (
               <>
@@ -225,7 +224,7 @@ const OptionsSelector = () => {
         <div className="flex items-start gap-2 p-3 bg-blue-500/20 border border-blue-500/50 rounded-lg text-blue-200 text-sm">
           <InfoIcon className="w-5 h-5 mt-0.5 flex-shrink-0" />
           <span>
-          Connect to Web3 platforms using an API key to fetch real-time blockchain data. Select a platform (e.g., CTxbt) to retrieve crypto signals, token prices, and market insights for simulation.
+            Connect to Web3 platforms using an API key to fetch real-time blockchain data. Select a platform (e.g., CTxbt) to retrieve crypto signals, token prices, and market insights for simulation.
           </span>
         </div>
       ),
@@ -245,10 +244,9 @@ const OptionsSelector = () => {
               key={option}
               onClick={() => setActiveOption(option)}
               className={`relative flex-1 px-8 py-4 text-sm font-medium transition-colors
-                ${
-                  activeOption === option
-                    ? "text-blue-400"
-                    : "text-gray-400 hover:text-blue-400/80"
+                ${activeOption === option
+                  ? "text-blue-400"
+                  : "text-gray-400 hover:text-blue-400/80"
                 }`}
             >
               <div className="flex items-center justify-center space-x-2">

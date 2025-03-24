@@ -141,7 +141,7 @@ const PlatformSelector = ({ onSimulateSuccess }: PlatformSelectorProps) => {
 
   const fetchSummary = async (data) => {
     try {
-      const response = await fetch("http://localhost:3001/api/summarize", {
+      const response = await fetch("https://ogxbt.xmutant.xyz/api/summarize", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(data),
@@ -288,11 +288,10 @@ const PlatformSelector = ({ onSimulateSuccess }: PlatformSelectorProps) => {
                     setDropdownOpen(false);
                   }
                 }}
-                className={`flex items-center p-3 ${
-                  platform.name === "CTxbt"
+                className={`flex items-center p-3 ${platform.name === "CTxbt"
                     ? "cursor-pointer hover:bg-gray-700"
                     : "cursor-not-allowed opacity-70"
-                }`}
+                  }`}
               >
                 <img
                   src={platform.image}
@@ -313,13 +312,12 @@ const PlatformSelector = ({ onSimulateSuccess }: PlatformSelectorProps) => {
       <button
         onClick={handleApiSimulate}
         disabled={isSimulating || !apiKey || !selectedPlatform}
-        className={`flex items-center justify-center space-x-2 w-full py-2.5 px-4 rounded-lg transition-colors ${
-          isSimulating
+        className={`flex items-center justify-center space-x-2 w-full py-2.5 px-4 rounded-lg transition-colors ${isSimulating
             ? "bg-blue-600 text-white cursor-not-allowed"
             : apiKey && selectedPlatform
-            ? "bg-blue-600 hover:bg-blue-700 text-white cursor-pointer"
-            : "bg-gray-800 text-gray-400 cursor-not-allowed"
-        }`}
+              ? "bg-blue-600 hover:bg-blue-700 text-white cursor-pointer"
+              : "bg-gray-800 text-gray-400 cursor-not-allowed"
+          }`}
       >
         {isSimulating ? (
           <Loader2 className="w-4 h-4 animate-spin" />
@@ -332,20 +330,19 @@ const PlatformSelector = ({ onSimulateSuccess }: PlatformSelectorProps) => {
       {showResults && (
         <div>
           <div className="flex items-start gap-2 p-3 bg-blue-500/20 border border-blue-500/50 rounded-lg text-blue-200 text-sm">
-          <InfoIcon className="w-5 h-5 mt-0.5 flex-shrink-0" />
-          <span>
-          You can download your backtested data in CSV. And Summarize it using 0G Computation as well.
-          </span>
-        </div>
+            <InfoIcon className="w-5 h-5 mt-0.5 flex-shrink-0" />
+            <span>
+              You can download your backtested data in CSV. And Summarize it using 0G Computation as well.
+            </span>
+          </div>
 
           <button
             onClick={handleSummarize}
             disabled={isLoadingSummary}
-            className={`mt-4 py-2 px-4 rounded ${
-              isLoadingSummary
+            className={`mt-4 py-2 px-4 rounded ${isLoadingSummary
                 ? "bg-gray-600 text-gray-400 cursor-not-allowed"
                 : "bg-green-600 hover:bg-green-700 text-white cursor-pointer"
-            }`}
+              }`}
           >
             {isLoadingSummary ? "Summarizing..." : "Summarize Result"}
           </button>
